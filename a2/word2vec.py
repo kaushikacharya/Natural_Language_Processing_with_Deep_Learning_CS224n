@@ -17,7 +17,12 @@ def sigmoid(x):
     """
 
     ### YOUR CODE HERE
-
+    assert np.ndim(x) < 2, "Can only handle scalar or 1-dimensional array"
+    if np.ndim(x) == 0:
+        # scalar
+        s = 1./(1 + np.exp(-1*x))
+    else:
+        s = np.diag([1./(1+np.exp(-1*y)) for y in x])
     ### END YOUR CODE
 
     return s
@@ -58,6 +63,34 @@ def naiveSoftmaxLossAndGradient(
     ### This numerically stable implementation helps you avoid issues pertaining
     ### to integer overflow. 
 
+    vocabSize = outsideVectors.shape[0]
+    assert centerWordVec.shape[0] == outsideVectors.shape[1],\
+        "mismatch of shapes: centerWordVec.shape: {} :: outsideVectors.shape: {}".format(centerWordVec.shape, outsideVectors.shape)
+    dimensionVector = outsideVectors.shape[1]  # Dimension of centerWordVec, each of the outsideVectors
+
+    # print("[Naive Softmax] vocabSize: {} :: dimensionVector: {}".format(vocabSize, dimensionVector))
+
+    # Create an array by computing dot product of v_c with each column of U.
+    #  These are the components of the conditional probability.
+    x_arr = outsideVectors.dot(centerWordVec)
+    # Now compute the conditional probability of each of the words in the vocabulary as outside word given
+    #   the center word vector v_c
+    conditional_probability_arr = softmax(x=x_arr)
+    # Compute the loss using the equation (2) in the assignment pdf
+    loss = -1*np.log(conditional_probability_arr[outsideWordIdx])
+
+    # Compute dJ / dv_c
+    gradCenterVec = -1*outsideVectors[outsideWordIdx, :]
+    for i in range(vocabSize):
+        gradCenterVec += conditional_probability_arr[i]*outsideVectors[i, :]
+
+    # Compute dJ / dU
+    gradOutsideVecs = np.zeros(outsideVectors.shape)
+
+    for i in range(vocabSize):
+        gradOutsideVecs[i, :] = conditional_probability_arr[i]*centerWordVec
+
+    gradOutsideVecs[outsideWordIdx, :] -= centerWordVec
 
     ### END YOUR CODE
 
@@ -100,12 +133,28 @@ def negSamplingLossAndGradient(
     # Negative sampling of words is done for you. Do not modify this if you
     # wish to match the autograder and receive points!
     negSampleWordIndices = getNegativeSamples(outsideWordIdx, dataset, K)
-    indices = [outsideWordIdx] + negSampleWordIndices
+    indices = [outsideWordIdx] + negSampleWordIndices  # KA - combines the two list into one list
 
     ### YOUR CODE HERE
 
     ### Please use your implementation of sigmoid in here.
+    loss = -1*np.log(sigmoid(outsideVectors[outsideWordIdx, :].dot(centerWordVec)))
 
+    for k in negSampleWordIndices:
+        loss -= np.log(sigmoid(-1*outsideVectors[k, :].dot(centerWordVec)))
+
+    # Compute dJ / dv_c
+    gradCenterVec = -(1 - sigmoid(outsideVectors[outsideWordIdx, :].dot(centerWordVec))) * outsideVectors[outsideWordIdx, :]
+    for k in negSampleWordIndices:
+        gradCenterVec += (1 - sigmoid(-1*outsideVectors[k, :].dot(centerWordVec))) * outsideVectors[k, :]
+
+    # Compute dJ / dU
+    gradOutsideVecs = np.zeros(outsideVectors.shape)
+    # 1st component: dJ / du_o
+    gradOutsideVecs[outsideWordIdx, :] = -(1 - sigmoid(outsideVectors[outsideWordIdx, :].dot(centerWordVec))) * centerWordVec
+    # 2nd component: sum over negative samples: dJ / du_k
+    for k in negSampleWordIndices:
+        gradOutsideVecs[k, :] += (1 - sigmoid(-1 * outsideVectors[k, :].dot(centerWordVec))) * centerWordVec
 
     ### END YOUR CODE
 
@@ -148,6 +197,17 @@ def skipgram(currentCenterWord, windowSize, outsideWords, word2Ind,
     gradOutsideVectors = np.zeros(outsideVectors.shape)
 
     ### YOUR CODE HERE
+    centerWordVec = centerWordVectors[word2Ind[currentCenterWord], :]
+    # iterate over the context window
+    for j in range(2*windowSize):
+        # compute the loss and gradients for the current outside word
+        cur_loss, cur_gradCenterVec, cur_gradOutsideVecs = word2vecLossAndGradient(centerWordVec=centerWordVec,
+                                                                                   outsideWordIdx=word2Ind[outsideWords[j]],
+                                                                                   outsideVectors=outsideVectors, dataset=dataset)
+
+        loss += cur_loss
+        gradCenterVecs[word2Ind[currentCenterWord], :] +=  cur_gradCenterVec
+        gradOutsideVectors += cur_gradOutsideVecs
 
     ### END YOUR CODE
 
@@ -260,3 +320,9 @@ Gradient wrt Center Vectors (dJ/dV):
 
 if __name__ == "__main__":
     test_word2vec()
+
+"""
+References:
+    - https://docs.scipy.org/doc/numpy/reference/generated/numpy.isscalar.html
+        - Suggests to use np.ndim(x) == 0 for scalar check.
+"""
