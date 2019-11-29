@@ -199,7 +199,7 @@ def skipgram(currentCenterWord, windowSize, outsideWords, word2Ind,
     ### YOUR CODE HERE
     centerWordVec = centerWordVectors[word2Ind[currentCenterWord], :]
     # iterate over the context window
-    for j in range(2*windowSize):
+    for j in range(min(len(outsideWords), 2*windowSize)):
         # compute the loss and gradients for the current outside word
         cur_loss, cur_gradCenterVec, cur_gradOutsideVecs = word2vecLossAndGradient(centerWordVec=centerWordVec,
                                                                                    outsideWordIdx=word2Ind[outsideWords[j]],
