@@ -1,0 +1,12 @@
+2c:
+    Training Process:
+        - My implemenation took 4+ hours on 32 core m/c with 32 GB RAM(Ubuntu 14.04)
+        - Final loss: 9.892286
+                loss at 10th iteration was 19.061546
+                
+    Observations of word vectors visualization:
+        - vector composition:  male - female + king = queen
+        - adjectives: cool, enoyable, brilliant, annoying are in a cluster
+        - tea, coffee are near to each other in the vector space
+        - hail is unexpectedly far away from snow, rain cluster
+        
