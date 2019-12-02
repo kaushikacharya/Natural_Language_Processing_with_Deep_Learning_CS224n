@@ -22,7 +22,10 @@ def sigmoid(x):
         # scalar
         s = 1./(1 + np.exp(-1*x))
     else:
-        s = np.diag([1./(1+np.exp(-1*y)) for y in x])
+        # s = np.array([1./(1+np.exp(-1*y)) for y in x])
+        # https://stackoverflow.com/questions/42594695/how-to-apply-a-function-map-values-of-each-element-in-a-2d-numpy-array-matrix
+        # ecerulm's answer suggests numpy exp is vectorized
+        s = 1./(1+np.exp(-1*x))
     ### END YOUR CODE
 
     return s
@@ -66,9 +69,11 @@ def naiveSoftmaxLossAndGradient(
     vocabSize = outsideVectors.shape[0]
     assert centerWordVec.shape[0] == outsideVectors.shape[1],\
         "mismatch of shapes: centerWordVec.shape: {} :: outsideVectors.shape: {}".format(centerWordVec.shape, outsideVectors.shape)
-    dimensionVector = outsideVectors.shape[1]  # Dimension of centerWordVec, each of the outsideVectors
 
-    # print("[Naive Softmax] vocabSize: {} :: dimensionVector: {}".format(vocabSize, dimensionVector))
+    """
+    dimensionVector = outsideVectors.shape[1]  # Dimension of centerWordVec, each of the outsideVectors
+    print("[Naive Softmax] vocabSize: {} :: dimensionVector: {}".format(vocabSize, dimensionVector))
+    """
 
     # Create an array by computing dot product of v_c with each column of U.
     #  These are the components of the conditional probability.
@@ -81,14 +86,21 @@ def naiveSoftmaxLossAndGradient(
 
     # Compute dJ / dv_c
     gradCenterVec = -1*outsideVectors[outsideWordIdx, :]
+
+    """
     for i in range(vocabSize):
         gradCenterVec += conditional_probability_arr[i]*outsideVectors[i, :]
+    """
+    gradCenterVec += conditional_probability_arr.dot(outsideVectors)
 
     # Compute dJ / dU
+    """
     gradOutsideVecs = np.zeros(outsideVectors.shape)
 
     for i in range(vocabSize):
         gradOutsideVecs[i, :] = conditional_probability_arr[i]*centerWordVec
+    """
+    gradOutsideVecs = np.outer(conditional_probability_arr, centerWordVec)
 
     gradOutsideVecs[outsideWordIdx, :] -= centerWordVec
 
@@ -139,22 +151,47 @@ def negSamplingLossAndGradient(
 
     ### Please use your implementation of sigmoid in here.
     loss = -1*np.log(sigmoid(outsideVectors[outsideWordIdx, :].dot(centerWordVec)))
-
+    """
     for k in negSampleWordIndices:
         loss -= np.log(sigmoid(-1*outsideVectors[k, :].dot(centerWordVec)))
+    """
+    loss -= np.sum(np.log(sigmoid(-1*outsideVectors[negSampleWordIndices, :].dot(centerWordVec))))
 
     # Compute dJ / dv_c
     gradCenterVec = -(1 - sigmoid(outsideVectors[outsideWordIdx, :].dot(centerWordVec))) * outsideVectors[outsideWordIdx, :]
+    """
     for k in negSampleWordIndices:
         gradCenterVec += (1 - sigmoid(-1*outsideVectors[k, :].dot(centerWordVec))) * outsideVectors[k, :]
+    """
+    gradCenterVec += (1 - sigmoid(-1 * outsideVectors[negSampleWordIndices, :].dot(centerWordVec))).dot(outsideVectors[negSampleWordIndices, :])
 
     # Compute dJ / dU
     gradOutsideVecs = np.zeros(outsideVectors.shape)
     # 1st component: dJ / du_o
     gradOutsideVecs[outsideWordIdx, :] = -(1 - sigmoid(outsideVectors[outsideWordIdx, :].dot(centerWordVec))) * centerWordVec
     # 2nd component: sum over negative samples: dJ / du_k
+    """
     for k in negSampleWordIndices:
         gradOutsideVecs[k, :] += (1 - sigmoid(-1 * outsideVectors[k, :].dot(centerWordVec))) * centerWordVec
+    """
+    countWordIndexDict = dict()
+    for k in negSampleWordIndices:
+        if k not in countWordIndexDict:
+            countWordIndexDict[k] = 0
+        countWordIndexDict[k] += 1
+
+    # https://stackoverflow.com/questions/16819222/how-to-return-dictionary-keys-as-a-list-in-python
+    # Jim Fasarakis Hilliard's answer
+    # Note the difference between python 2 and python 3 for <dict>.keys()
+    #   In python 2 its a list whereas in python 3 its dict_keys
+    negSampleWordUniqueIndices = [*countWordIndexDict]
+    negSampleWordCountVec = np.zeros(len(countWordIndexDict), dtype=int)
+    for i in range(len(countWordIndexDict)):
+        k = negSampleWordUniqueIndices[i]
+        negSampleWordCountVec[i] = countWordIndexDict[k]
+
+    gradOutsideVecs[negSampleWordUniqueIndices, :] = \
+        np.outer(np.multiply((1 - sigmoid(-1 * outsideVectors[negSampleWordUniqueIndices, :].dot(centerWordVec))), negSampleWordCountVec), centerWordVec)
 
     ### END YOUR CODE
 
