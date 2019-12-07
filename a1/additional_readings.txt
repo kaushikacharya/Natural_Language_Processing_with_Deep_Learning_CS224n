@@ -14,3 +14,8 @@ SVD:
     - Truncated SVD
         - https://en.wikipedia.org/wiki/Singular_value_decomposition#Truncated_SVD
         
+CS168:
+    - https://web.stanford.edu/class/cs168/index.html
+        - "This course will provide a rigorous and hands-on introduction to the central ideas 
+            and algorithms that constitute the core of the modern algorithms toolkit."
+    
