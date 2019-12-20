@@ -72,7 +72,22 @@ class ParserModel(nn.Module):
         ###     Xavier Init: https://pytorch.org/docs/stable/nn.html#torch.nn.init.xavier_uniform_
         ###     Dropout: https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
 
+        # print("embeddings.shape: {} :: self.pretrained_embeddings.weight.shape: {}".format(embeddings.shape, self.pretrained_embeddings.weight.shape))
+        # Note: learnable weights of the module of shape (out_features,in_features)
+        #       Note that out_features comes first.
 
+        # Construct embed_to_hidden linear layer
+        self.embed_to_hidden = nn.Linear(in_features=n_features*self.embed_size, out_features=hidden_size)
+        # Initialize weight matrix with xavier uniform
+        self.embed_to_hidden.weight = nn.parameter.Parameter(nn.init.xavier_uniform_(tensor=torch.empty(hidden_size, n_features*self.embed_size)))
+
+        # Dropout layer
+        self.dropout = nn.Dropout(p=self.dropout_prob)
+
+        # Construct hidden_to_logits linear layer
+        self.hidden_to_logits = nn.Linear(in_features=hidden_size, out_features=n_classes)
+        # Initialize weight matrix with xavier uniform
+        self.hidden_to_logits.weight = nn.parameter.Parameter(nn.init.xavier_uniform_(tensor=torch.empty(n_classes, hidden_size)))
         ### END YOUR CODE
 
     def embedding_lookup(self, t):
@@ -104,6 +119,11 @@ class ParserModel(nn.Module):
         ###     Embedding Layer: https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
 
+        # lookup the embeddings
+        x = self.pretrained_embeddings(t)
+
+        # reshape the embeddings
+        x = x.view(x.shape[0], x.shape[1]*x.shape[2])
 
         ### END YOUR CODE
         return x
@@ -142,6 +162,21 @@ class ParserModel(nn.Module):
         ### Please see the following docs for support:
         ###     ReLU: https://pytorch.org/docs/stable/nn.html?highlight=relu#torch.nn.functional.relu
 
+        # print("t.shape: {}".format(t.shape))
+
+        # embedding lookup
+        x = self.embedding_lookup(t=t)
+
+        # print("x.shape: {} :: embed_to_hidden.weight.shape: {} :: embed_to_hidden.bias.shape: {}".format(x.shape, self.embed_to_hidden.weight.shape, self.embed_to_hidden.bias.shape))
+
+        # Apply embed_to_hidden linear layer to the embeddings
+        z = self.embed_to_hidden(x)
+
+        # Apply relu non-linearity
+        h = F.relu(input=z)
+
+        # Apply dropout layer and hidden_to_logits to get the logits
+        logits = self.hidden_to_logits(self.dropout(h))
 
         ### END YOUR CODE
         return logits

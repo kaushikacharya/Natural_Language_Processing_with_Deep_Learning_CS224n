@@ -1,0 +1,6 @@
+dev set: 
+    UAS: 88.77
+    average train loss: 0.06645395191894336
+    
+test set:
+    UAS: 89.07
