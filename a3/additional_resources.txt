@@ -1,0 +1,9 @@
+- Shallow vs Deep copy:
+    - https://www.geeksforgeeks.org/copy-python-deep-copy-shallow-copy/
+        - Under the section "Important Points", it mentions reference(to original object) stored in the copy for compound object.
+        - This information is useful in addition to shallow copy comments in parser_transitions.py#minibatch_parse()
+    
+- Mini-batch prediction:
+     - https://pytorch.org/docs/stable/nn.html#torch.nn.AdaptiveLogSoftmaxWithLoss.predict
+        - Have a look at the shape of input and output
+    
