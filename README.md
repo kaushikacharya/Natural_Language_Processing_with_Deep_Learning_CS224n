@@ -10,4 +10,5 @@ http://web.stanford.edu/class/cs224n/
     * [Written: Understanding word2vec](./a2/written_solution/written_solution.md)
     * [Coding: Implementing word2vec](./a2)
 * Assignment #3: Dependency Parsing
+    * [Writtem: Dependency Paring](./a3/written_solution/written_solution.md)
     * [Coding: Neural Transition-Based Dependency Parsing](./a3)
