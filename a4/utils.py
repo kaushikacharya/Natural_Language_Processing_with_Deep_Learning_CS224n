@@ -29,7 +29,17 @@ def pad_sents(sents, pad_token):
     sents_padded = []
 
     ### YOUR CODE HERE (~6 Lines)
+    max_sentence_len = 0
+    for sent in sents:
+        max_sentence_len = max(max_sentence_len, len(sent))
 
+    # https://stackoverflow.com/questions/10712002/create-an-empty-list-in-python-with-certain-size
+    for sent in sents:
+        sent_padded = [pad_token] * max_sentence_len
+        sent_padded[:len(sent)] = sent
+        sents_padded.append(sent_padded)
+
+    # print("sents_padded: {}".format(sents_padded))
 
     ### END YOUR CODE
 

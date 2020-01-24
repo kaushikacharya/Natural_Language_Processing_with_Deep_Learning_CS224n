@@ -73,6 +73,17 @@ class NMT(nn.Module):
         ###     Dropout Layer:
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
 
+        # ?? Should we pass dropout parameter. Find out from the lecture where is the dropout used.
+        self.encoder = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, bias=True, bidirectional=True)
+        self.decoder = nn.LSTMCell(input_size=embed_size+hidden_size, hidden_size=hidden_size, bias=True)
+
+        self.h_projection = nn.Linear(in_features=2*hidden_size, out_features=hidden_size, bias=False)
+        self.c_projection = nn.Linear(in_features=2*hidden_size, out_features=hidden_size, bias=False)
+        self.att_projection = nn.Linear(in_features=2*hidden_size, out_features=hidden_size, bias=False)
+        self.combined_output_projection = nn.Linear(in_features=3*hidden_size, out_features=hidden_size, bias=False)
+        self.target_vocab_projection = nn.Linear(in_features=hidden_size, out_features=len(vocab.tgt), bias=False)
+        self.dropout = nn.Dropout(p=dropout_rate)
+
 
         ### END YOUR CODE
 
@@ -139,7 +150,7 @@ class NMT(nn.Module):
         ###     2. Compute `enc_hiddens`, `last_hidden`, `last_cell` by applying the encoder to `X`.
         ###         - Before you can apply the encoder, you need to apply the `pack_padded_sequence` function to X.
         ###         - After you apply the encoder, you need to apply the `pad_packed_sequence` function to enc_hiddens.
-        ###         - Note that the shape of the tensor returned by the encoder is (src_len b, h*2) and we want to
+        ###         - Note that the shape of the tensor returned by the encoder is (src_len, b, h*2) and we want to
         ###           return a tensor of shape (b, src_len, h*2) as `enc_hiddens`.
         ###     3. Compute `dec_init_state` = (init_decoder_hidden, init_decoder_cell):
         ###         - `init_decoder_hidden`:
@@ -163,6 +174,29 @@ class NMT(nn.Module):
         ###     Tensor Permute:
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.permute
 
+        # print("source_lengths: {}".format(source_lengths))
+        X = self.model_embeddings.source(source_padded)
+        # print("X.shape: {}".format(X.shape))
+        # print("X: {}".format(X))
+        # pack the tensor
+        X_packed = pack_padded_sequence(input=X, lengths=torch.tensor(source_lengths), batch_first=False)
+        # print("X_packed.data.shape: {}".format(X_packed.data.shape))
+        # print("X_packed.data: {}".format(X_packed.data))
+        # apply encoder
+        enc_hiddens_output, (last_hidden, last_cell) = self.encoder(X_packed)
+        # print("enc_hiddens_output.data.shape: {}".format(enc_hiddens_output.data.shape))
+        # print("enc_hiddens_output: {}".format(enc_hiddens_output))
+        # pad the packed encoded hidden tensor. Pass batch_first=True to transpose encoder output of shape
+        #  (src_len, b, h*2) into (b, src_len, h*2)
+        enc_hiddens, seq_lengths = pad_packed_sequence(sequence=enc_hiddens_output, batch_first=True)
+
+        # concatenate forward and backward tensors of last_hidden
+        init_decoder_hidden = self.h_projection(torch.cat(tensors=(last_hidden[0], last_hidden[1]), dim=1))
+
+        # concatenate forward and backward tensors of last_cell
+        init_decoder_cell = self.c_projection(torch.cat(tensors=(last_cell[0], last_cell[1]), dim=1))
+
+        dec_init_state = (init_decoder_hidden, init_decoder_cell)
 
         ### END YOUR CODE
 
@@ -233,6 +267,30 @@ class NMT(nn.Module):
         ###     Tensor Stacking:
         ###         https://pytorch.org/docs/stable/torch.html#torch.stack
 
+        # apply attention projection layer to enc_hiddens
+        enc_hiddens_proj = self.att_projection(enc_hiddens)
+
+        Y = self.model_embeddings.target(target_padded)
+
+        # split the tensor into chunks to iterate over the time dimension
+        for Y_t in torch.split(tensor=Y, split_size_or_sections=1, dim=0):
+            # squeeze Y_t from dimension (1,b,e) to (b,e)
+            Y_t = torch.squeeze(Y_t, dim=0)
+
+            # construct Ybar_t
+            Ybar_t = torch.cat(tensors=(Y_t, o_prev), dim=0)
+
+            # compute decoder's next (cell, state) and new combined output
+            dec_state, o_t, e_t = self.step(Ybar_t=Ybar_t, dec_state=dec_state, enc_hiddens=enc_hiddens,
+                                            enc_hiddens_proj=enc_hiddens_proj, enc_masks=enc_masks)
+
+            combined_outputs.append(o_t)
+
+            # update prev output
+            o_prev = o_t
+
+        # convert list of (b,h) tensors into tensor (tgt_len,b,h) for combined_outputs
+        combined_outputs = torch.stack(tensors=combined_outputs, dim=0)
 
         ### END YOUR CODE
 
@@ -291,6 +349,14 @@ class NMT(nn.Module):
         ###     Tensor Squeeze:
         ###         https://pytorch.org/docs/stable/torch.html#torch.squeeze
 
+        # apply decoder to obtain new dec_state
+        dec_state = self.decoder(Ybar_t, dec_state)
+
+        # split into the two parts
+        dec_hidden, dec_cell = dec_state
+
+        # compute attention scores
+        e_t = torch.squeeze(input=torch.bmm(input=enc_hiddens_proj, mat2=torch.unsqueeze(dec_hidden, dim=2)), dim=2)
 
         ### END YOUR CODE
 
@@ -326,6 +392,39 @@ class NMT(nn.Module):
         ###     Tanh:
         ###         https://pytorch.org/docs/stable/torch.html#torch.tanh
 
+        # apply softmax to e_t
+        alpha_t = F.softmax(input=e_t, dim=1)
+
+        # print("enc_hiddens.shape: {}".format(enc_hiddens.shape))
+        # print("changed view's shape: {}".format(enc_hiddens.view(enc_hiddens.shape[0], enc_hiddens.shape[2], enc_hiddens.shape[1]).shape))
+
+        # compute attention output vector
+        """
+        a_t = torch.squeeze(torch.bmm(input=enc_hiddens.view(enc_hiddens.shape[0], enc_hiddens.shape[2], enc_hiddens.shape[1]),
+                                      mat2=torch.unsqueeze(alpha_t, dim=2)), dim=2)
+        """
+
+        """
+        # Note: During sanity check, shapes were not compatible. Hence instead of view() used reshape()
+        #   which copies when shapes are not compatible.
+        enc_hiddens_reshaped = torch.reshape(enc_hiddens,
+                                             (enc_hiddens.shape[0], enc_hiddens.shape[2], enc_hiddens.shape[1]))
+        print("enc_hiddens_reshaped.shape: {}".format(enc_hiddens_reshaped.shape))
+        a_t = torch.squeeze(torch.bmm(input=enc_hiddens_reshaped, mat2=torch.unsqueeze(alpha_t, dim=2)), dim=2)
+        """
+        a_t = torch.squeeze(torch.bmm(input=torch.unsqueeze(alpha_t, dim=1), mat2=enc_hiddens), dim=1)
+
+        # print("a_t.shape: {}".format(a_t.shape))
+        # print("dec_hidden.shape: {}".format(dec_hidden.shape))
+
+        # compute U_t by concatenating dec_hidden with a_t
+        U_t = torch.cat(tensors=(a_t, dec_hidden), dim=1)
+
+        # compute V_t
+        V_t = self.combined_output_projection(U_t)
+
+        # compute O_t
+        O_t = self.dropout(torch.tanh(V_t))
 
         ### END YOUR CODE
 
