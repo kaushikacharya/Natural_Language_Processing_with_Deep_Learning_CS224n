@@ -74,6 +74,8 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
 
         # ?? Should we pass dropout parameter. Find out from the lecture where is the dropout used.
+        # print("embed_size: {}".format(embed_size))
+        # print("hidden_size: {}".format(hidden_size))
         self.encoder = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, bias=True, bidirectional=True)
         self.decoder = nn.LSTMCell(input_size=embed_size+hidden_size, hidden_size=hidden_size, bias=True)
 
@@ -278,7 +280,7 @@ class NMT(nn.Module):
             Y_t = torch.squeeze(Y_t, dim=0)
 
             # construct Ybar_t
-            Ybar_t = torch.cat(tensors=(Y_t, o_prev), dim=0)
+            Ybar_t = torch.cat(tensors=(Y_t, o_prev), dim=1)
 
             # compute decoder's next (cell, state) and new combined output
             dec_state, o_t, e_t = self.step(Ybar_t=Ybar_t, dec_state=dec_state, enc_hiddens=enc_hiddens,
@@ -350,6 +352,7 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.squeeze
 
         # apply decoder to obtain new dec_state
+        # print("Ybar_t.shape: {}".format(Ybar_t.shape))
         dec_state = self.decoder(Ybar_t, dec_state)
 
         # split into the two parts
