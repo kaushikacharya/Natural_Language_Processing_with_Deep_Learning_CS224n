@@ -44,6 +44,7 @@ import math
 import sys
 import pickle
 import time
+import os
 
 
 from docopt import docopt
@@ -285,6 +286,12 @@ def decode(args: Dict[str, str]):
         top_hypotheses = [hyps[0] for hyps in hypotheses]
         bleu_score = compute_corpus_level_bleu_score(test_data_tgt, top_hypotheses)
         print('Corpus BLEU: {}'.format(bleu_score * 100), file=sys.stderr)
+
+    # -- Added by KA ---
+    output_dir = os.path.dirname(args['OUTPUT_FILE'])
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    # ------------------
 
     with open(args['OUTPUT_FILE'], 'w') as f:
         for src_sent, hyps in zip(test_data_src, hypotheses):
