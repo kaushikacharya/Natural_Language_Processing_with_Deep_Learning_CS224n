@@ -1,7 +1,7 @@
 **CS224n: Natural Language Processing with Deep Learning**
 http://web.stanford.edu/class/cs224n/
 
-**Winter 2019**
+**[Winter 2019](https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1194/)**
 
 #### Assignment Solutions
 
@@ -12,3 +12,10 @@ http://web.stanford.edu/class/cs224n/
 * Assignment #3: Dependency Parsing
     * [Writtem: Dependency Paring](./a3/written_solution/written_solution.md)
     * [Coding: Neural Transition-Based Dependency Parsing](./a3)
+* Assignment #4: Neural Machine Translation with RNNs and Analyzing NMT
+Systems
+    * [Coding: Neural Machine Translation with RNNs](./a4)
+    
+    
+    
+**Note**: For the programming assignments, have uploaded only the scripts which I have changed. For the rest of the files, one needs to download Winter 2019 assignments.  
