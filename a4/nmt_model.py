@@ -73,7 +73,6 @@ class NMT(nn.Module):
         ###     Dropout Layer:
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
 
-        # ?? Should we pass dropout parameter. Find out from the lecture where is the dropout used.
         # print("embed_size: {}".format(embed_size))
         # print("hidden_size: {}".format(hidden_size))
         self.encoder = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, bias=True, bidirectional=True)
