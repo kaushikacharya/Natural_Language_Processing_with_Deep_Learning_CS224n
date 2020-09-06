@@ -14,8 +14,12 @@ http://web.stanford.edu/class/cs224n/
     * [Coding: Neural Transition-Based Dependency Parsing](./a3)
 * Assignment #4: Neural Machine Translation with RNNs and Analyzing NMT
 Systems
+    * [Written](./a4/written_solution/written_solution.md)
     * [Coding: Neural Machine Translation with RNNs](./a4)
     
     
     
-**Note**: For the programming assignments, have uploaded only the scripts which I have changed. For the rest of the files, one needs to download Winter 2019 assignments.  
+**Note**: For the programming assignments, have uploaded only the scripts which I have changed. For the rest of the files, one needs to download Winter 2019 assignments.
+  
+##### Personal Website
+* [kaushikacharya.github.io](kaushikacharya.github.io)
