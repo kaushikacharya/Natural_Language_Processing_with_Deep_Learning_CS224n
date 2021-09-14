@@ -1,4 +1,4 @@
-**1f - Sentence Masks**
+**1g - Sentence Masks**
 
 Attention scores are computed by taking dot product of decoder hidden vector with projected encoder hidden vector. Vector products are computed over batch of sentences. As these sentences may have variable word length, padded tokens are added to shorter sentences.
  
