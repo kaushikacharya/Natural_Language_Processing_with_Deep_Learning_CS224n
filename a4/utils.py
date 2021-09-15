@@ -54,6 +54,7 @@ def read_corpus(file_path, source):
     """
     data = []
     for line in open(file_path):
+        # Replaced by KA: Using default delimiter: None
         # sent = line.strip().split(' ')
         sent = line.strip().split()
         # only append <s> and </s> to the target sentence
