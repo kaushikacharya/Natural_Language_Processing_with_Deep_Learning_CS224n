@@ -16,10 +16,17 @@ http://web.stanford.edu/class/cs224n/
 Systems
     * [Written](./a4/written_solution/written_solution.md)
     * [Coding: Neural Machine Translation with RNNs](./a4)
-    
-    
-    
-**Note**: For the programming assignments, have uploaded only the scripts which I have changed. For the rest of the files, one needs to download Winter 2019 assignments.
   
+**Note**: For the programming assignments, have uploaded only the scripts which I have changed. For the rest of the files, one needs to download Winter 2019 assignments.
+
+#### Projects
+Mentioned below in the projects are the topics covered in this course. 
+
+* [Named Entity Recognition (NER) for Occupation Recognition on Spanish Medical Documents](https://github.com/kaushikacharya/clinical_occupation_recognition)
+  * NER
+    * Features included Dependency Parse Tree
+  * Entity Normalization (Entity Linking)
+    * Fasttext's subword embedding
+
 ##### Personal Website
 * [kaushikacharya.github.io](kaushikacharya.github.io)
