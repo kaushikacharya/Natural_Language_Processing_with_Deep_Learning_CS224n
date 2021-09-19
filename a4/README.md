@@ -25,7 +25,8 @@ For details, have a look at the [table](https://cloud.google.com/translate/autom
 #### Probability density distribution of sentence BLEU scores
 ![Probability density distribution of sentence BLEU scores](./outputs/sentence_bleu_score_prob_density.png "Probability density distribution of sentence BLEU scores")
 
-The above distribution shows that a significant number of translated sentences have very poor BLEU score (almost 0).
+- Gaussian kernel density estimate plot using [Seaborn's distplot](https://seaborn.pydata.org/generated/seaborn.distplot.html).
+- The above distribution shows that a significant number of translated sentences have very poor BLEU score (almost 0).
 
 
 ## Errata
