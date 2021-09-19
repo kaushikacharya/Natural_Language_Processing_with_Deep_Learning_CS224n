@@ -13,14 +13,19 @@ Convert from **Spanish** to **English**.
 
 For details, have a look at the [table](https://cloud.google.com/translate/automl/docs/evaluate#interpretation) which describes the interpretation of what the score range means.
 
-#### Output
-- [csv](./outputs/test_es_en_translation.csv)
+### Output
+- [csv file](./outputs/test_es_en_translation.csv)
 
 - Columns:
     - **source**: Spanish (source) sentences
     - **translation_reference**: English (target) reference sentences
     - **translation_hypothesis**: English translation by NMT model
     - **sentence_bleu_score**: Sentence BLEU score
+  
+#### Probability density distribution of sentence BLEU scores
+![Probability density distribution of sentence BLEU scores](./outputs/sentence_bleu_score_prob_density.png "Probability density distribution of sentence BLEU scores")
+
+The above distribution shows that a significant number of translated sentences have very poor BLEU score (almost 0).
 
 
 ## Errata
